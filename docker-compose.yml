@@ -5,8 +5,13 @@ services:
     ports:
       - "${APP_PORT:-8008}:${APP_PORT:-8008}"
     volumes:
-      - ./data:/app/data
-      - ./.env:/app/.env
+      - team-manage-data:/app/data
     restart: always
+    env_file:
+      - .env
     environment:
       - DATABASE_URL=sqlite+aiosqlite:////app/data/team_manage.db
+
+volumes:
+  team-manage-data:
+    name: team-manage-data
