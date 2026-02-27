@@ -14,6 +14,7 @@ from app.services.warranty import WarrantyService
 from app.services.team import TeamService
 from app.services.chatgpt import ChatGPTService
 from app.services.encryption import encryption_service
+from app.services.notification import notification_service
 from app.utils.time_utils import get_now
 
 logger = logging.getLogger(__name__)
@@ -318,7 +319,8 @@ class RedeemFlowService:
                     return {"success": False, "error": "Team 账号 Token 已失效且无法刷新"}
 
                 invite_result = await self.chatgpt_service.send_invite(
-                    access_token, final_team_account_id, email, db_session
+                    access_token, final_team_account_id, email, db_session,
+                    identifier=target_team.email
                 )
 
                 # --- 阶段 3: 最终化 ---
@@ -338,6 +340,11 @@ class RedeemFlowService:
                         db_session.add(redemption_record)
                     
                     logger.info(f"兑换成功: {email} 加入 Team {team_id_final}")
+
+                    # 检查库存并发送通知 (异步不阻塞)
+                    import asyncio
+                    asyncio.create_task(notification_service.check_and_notify_low_stock())
+
                     return {
                         "success": True,
                         "message": f"成功加入 Team: {final_team_name}",
